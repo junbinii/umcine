@@ -15,7 +15,7 @@ $env:PATH = "$java21\bin;$env:PATH"
 $envFile = Join-Path $projectRoot '.env'
 if (Test-Path $envFile) {
     foreach ($line in Get-Content -LiteralPath $envFile -Encoding UTF8) {
-        if ($line -match '^\s*(DB_[A-Z_]+)=(.*)$') {
+        if ($line -match '^\s*(DB_[A-Z_]+|JWT_SECRET|JWT_ACCESS_EXPIRATION)=(.*)$') {
             $key = $Matches[1]
             $value = $Matches[2].Trim()
             if ($value.StartsWith('"') -and $value.EndsWith('"')) { $value = ConvertFrom-Json $value }

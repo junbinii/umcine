@@ -1,6 +1,7 @@
 package com.umc.movie.controller;
 
 import com.umc.movie.dto.ApiResponse;
+import com.umc.movie.exception.ApiException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -12,6 +13,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(ApiException.class)
+    ResponseEntity<ApiResponse<Void>> apiFailure(ApiException error) {
+        return ResponseEntity.status(error.getStatus()).body(ApiResponse.failure(error.getCode(), error.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiResponse<Void>> invalidForm(MethodArgumentNotValidException error) {
         var field = error.getBindingResult().getFieldErrors().getFirst();
@@ -29,7 +35,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    ResponseEntity<ApiResponse<Void>> constraintViolation() {
+    ResponseEntity<ApiResponse<Void>> constraintViolation(DataIntegrityViolationException error) {
+        String detail = error.getMostSpecificCause().getMessage();
+        if (detail != null && detail.contains("uk_favorite_member_movie")) {
+            return ResponseEntity.status(409).body(ApiResponse.failure(
+                    "FAVORITE409_1", "이미 이 영화를 즐겨찾기하셨습니다."));
+        }
+        if (detail != null && detail.contains("uk_rating_member_movie")) {
+            return ResponseEntity.status(409).body(ApiResponse.failure(
+                    "RATING409_1", "이미 이 영화에 평점을 남기셨습니다."));
+        }
         return failure(409, "데이터베이스 제약 조건과 충돌하여 저장할 수 없습니다.");
     }
 
